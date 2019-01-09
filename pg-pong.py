@@ -10,9 +10,14 @@ batch_size = 10 # every how many episodes to do a param update?
 learning_rate = 1e-4
 gamma = 0.99 # discount factor for reward
 decay_rate = 0.99 # decay factor for RMSProp leaky sum of grad^2
-resume = False # resume from previous checkpoint?
-render = False
+resume = True # resume from previous checkpoint?
+test = False # test mode, turn off epsilon-greedy and render the scene
 save_file = 'pong_model.p'
+
+if test == True:
+    render = True
+else:
+    render = False
 
 
 # model initialization
@@ -81,7 +86,10 @@ while True:
 
   # forward the policy network and sample an action from the returned probability
   aprob, h = policy_forward(x)
-  action = 2 if np.random.uniform() < aprob else 3 # roll the dice!
+  if test == True:
+    action = 2 if aprob>0.5 else 3
+  else:
+    action = 2 if np.random.uniform() < aprob else 3 # roll the dice!
 
   # record various intermediates (needed later for backprop)
   xs.append(x) # observation
