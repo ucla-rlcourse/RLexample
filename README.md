@@ -48,3 +48,11 @@ python my_random_agent.py Pong-ram-v0
 python my_learning_agent.py CartPole-v0
 
 ```
+
+* Playing Pong on CPU (with a great [blog](http://karpathy.github.io/2016/05/31/rl/))
+
+```
+python pg-pong.py
+
+```
+

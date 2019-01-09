@@ -54,7 +54,7 @@ if __name__ == '__main__':
     env = gym.make(args.target)
     env.seed(0)
     np.random.seed(0)
-    params = dict(n_iter=100, batch_size=60, elite_frac = 0.2)
+    params = dict(n_iter=100, batch_size=10, elite_frac = 0.2)
     num_steps = 200
 
     def noisy_evaluation(theta):
