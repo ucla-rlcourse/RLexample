@@ -56,3 +56,9 @@ python pg-pong.py
 
 ```
 
+* Random navigation agent in [AI2THOR](https://github.com/allenai/ai2thor)
+
+```
+python navigation_agent.py
+```
+
