@@ -49,7 +49,7 @@ python my_learning_agent.py CartPole-v0
 
 ```
 
-* Playing Pong on CPU (with a great [blog](http://karpathy.github.io/2016/05/31/rl/)). One pretrained model is ```pong_model_bolei.p```(after training 20,000 episodes), which you can load in by replacing file_name in the script. 
+* Playing Pong on CPU (with a great [blog](http://karpathy.github.io/2016/05/31/rl/)). One pretrained model is ```pong_model_bolei.p```(after training 20,000 episodes), which you can load in by replacing [save_file](https://github.com/metalbubble/RLexample/blob/master/pg-pong.py#L15) in the script. 
 
 ```
 python pg-pong.py
