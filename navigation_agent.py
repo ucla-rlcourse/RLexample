@@ -10,7 +10,7 @@ controller.start()
 # Living rooms:   FloorPlan201 - FloorPlan230
 # Bedrooms:       FloorPlan301 - FloorPlan330
 # Bathrooms:      FloorPLan401 - FloorPlan430
-room_id = random.randint(1, 430)
+room_id = 200 #random.randint(1, 430)
 controller.reset('FloorPlan' + str(room_id))
 
 # gridSize specifies the coarseness of the grid that the agent navigates on

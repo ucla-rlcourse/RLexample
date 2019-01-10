@@ -19,7 +19,6 @@ if test == True:
 else:
     render = False
 
-
 # model initialization
 D = 80 * 80 # input dimensionality: 80x80 grid
 if resume:
