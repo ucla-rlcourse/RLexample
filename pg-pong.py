@@ -124,7 +124,7 @@ while True:
     for k in model: grad_buffer[k] += grad[k] # accumulate grad over batch
 
     # perform rmsprop parameter update every batch_size episodes
-    if episode_number % batch_size == 0:
+    if episode_number % batch_size == 0 and test == False:
       for k,v in model.items():
         g = grad_buffer[k] # gradient
         rmsprop_cache[k] = decay_rate * rmsprop_cache[k] + (1 - decay_rate) * g**2
