@@ -21,5 +21,3 @@ from algorithms.ucb.ucb2 import *
 from algorithms.exp3.exp3 import *
 from algorithms.hedge.hedge import *
 
-# # Testing framework
-from testing_framework.tests import *

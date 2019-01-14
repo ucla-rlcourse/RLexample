@@ -1,6 +1,5 @@
-Example code for Multi-armed Bandits
 
-# Introduction
+# Example for multi-armed bandits
 
 Several standard algorithms for solving the multi-armed badits problem:
 
@@ -9,6 +8,18 @@ Several standard algorithms for solving the multi-armed badits problem:
 * UCB1
 * UCB2
 * Hedge
+
+refer to [algorithms/randomselect.py](algorithms/randomselect.py) for the API of the algorithm. 
+
+* Run the simulation
+```
+    python simulation.py
+```
+
+
+
+
+
 
 # Acknowledgement
 
