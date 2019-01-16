@@ -1,5 +1,7 @@
 .DS_Store
-*csv
-*tsv
-*pdf
-*pyc
+*.csv
+*.tsv
+*.pdf
+*.pyc
+*.p
+*.out
