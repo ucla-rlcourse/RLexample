@@ -12,7 +12,7 @@ gamma = 0.99 # discount factor for reward
 decay_rate = 0.99 # decay factor for RMSProp leaky sum of grad^2
 resume = True # resume from previous checkpoint?
 test = True # test mode, turn off epsilon-greedy and render the scene
-save_file = 'pong_model.p'
+save_file = 'pong_model_bolei.p'
 
 if test == True:
     render = True

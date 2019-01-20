@@ -1,12 +1,12 @@
 from core import *
 import matplotlib.pyplot as plt
 import numpy as np
-from algorithms.randomselect import * 
+from algorithms.randomselect import *
 
 ### construct the multi-arm bandit
-arm1 = BernoulliArm(0.7)
-arm2 = BernoulliArm(0.3) #arm2 = NormalArm(2.0, 1.0)
-arm3 = BernoulliArm(0.1)
+arm1 = BernoulliArm(0.5)
+arm2 = BernoulliArm(0.5) #arm2 = NormalArm(2.0, 1.0)
+arm3 = BernoulliArm(0.5)
 
 
 rewards_single = []
