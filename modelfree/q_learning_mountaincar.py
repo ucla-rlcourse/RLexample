@@ -19,7 +19,7 @@ initial_lr = 1.0 # Learning rate
 min_lr = 0.003
 gamma = 1.0
 t_max = 10000
-eps = 0.02
+eps = 0.1
 
 def run_episode(env, policy=None, render=False):
     obs = env.reset()
