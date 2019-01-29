@@ -10,10 +10,10 @@ import numpy as np
 import gym
 from gym import wrappers
 
-off_policy = False # if True use off-policy q-learning update, if False, use on-policy SARSA update
+off_policy = True # if True use off-policy q-learning update, if False, use on-policy SARSA update
 
 n_states = 40
-iter_max = 20000
+iter_max = 5000
 
 initial_lr = 1.0 # Learning rate
 min_lr = 0.003
@@ -71,10 +71,7 @@ if __name__ == '__main__':
             if np.random.uniform(0, 1) < eps:
                 action = np.random.choice(env.action_space.n)
             else:
-                logits = q_table[a][b]
-                logits_exp = np.exp(logits)
-                probs = logits_exp / np.sum(logits_exp)
-                action = np.random.choice(env.action_space.n, p=probs)
+                action = np.argmax(q_table[a][b])
             obs, reward, done, _ = env.step(action)
             total_reward += reward
             # update q table
@@ -88,10 +85,7 @@ if __name__ == '__main__':
                 if np.random.uniform(0,1) < eps:
                     action_ = np.random.choice(env.action_space.n)
                 else:
-                    logits_ = q_table[a_][b_]
-                    logits_exp_ = np.exp(logits_)
-                    probs_ = logits_exp_ / np.sum(logits_exp_)
-                    action_ = np.random.choice(env.action_space.n, p=probs_)
+                    action_ = np.argmax(q_table[a_][b_])
                 q_table[a][b][action] = q_table[a][b][action] + eta * (reward + gamma *  q_table[a_][b_][action_] - q_table[a][b][action])
             if done:
                 break
