@@ -1,4 +1,9 @@
+"""
+Model-free Control for OpenAI FrozenLake env (https://gym.openai.com/envs/FrozenLake-v0/)
 
+Bolei Zhou for IERG6130 course example
+
+"""
 import gym,sys,numpy as np
 from gym.envs.registration import register
 
