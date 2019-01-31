@@ -9,14 +9,14 @@ from gym.envs.registration import register
 
 
 no_slippery = True
-render_last = True # whether to visualize the last episode in testing
+render_last = False # whether to visualize the last episode in testing
 
 # -- hyperparameters--
-num_epis_train = 5000
+num_epis_train = 10000
 num_iter = 100
 learning_rate = 0.01
 discount = 0.8
-eps = 0.2
+eps = 0.3
 
 if no_slippery == True:
     # the simplified frozen lake without slippery (so the transition is deterministic)
@@ -24,7 +24,7 @@ if no_slippery == True:
         id='FrozenLakeNotSlippery-v0',
         entry_point='gym.envs.toy_text:FrozenLakeEnv',
         kwargs={'map_name' : '4x4', 'is_slippery': False},
-        max_episode_steps=2000,
+        max_episode_steps=1000,
         reward_threshold=0.78, # optimum = .8196
     )
     env = gym.make('FrozenLakeNotSlippery-v0')
@@ -42,12 +42,11 @@ for epis in range(num_epis_train):
             action = np.random.choice(env.action_space.n)
         else:
             action = np.argmax(q_learning_table[state,:])
-        #action = np.argmax(q_learning_table[state,:] + np.random.randn(1,4))
-        #action = np.argmax(np.random.randn(1,4)) # this random policy as behavior policy also works!
         state_new, reward, done,_ = env.step(action)
         q_learning_table[state,action] = q_learning_table[state, action] + learning_rate * (reward + discount*np.max(q_learning_table[state_new,:]) - q_learning_table[state, action])
         state = state_new
         if done: break
+
 print(np.argmax(q_learning_table,axis=1))
 print(np.around(q_learning_table,6))
 
