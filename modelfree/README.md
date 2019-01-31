@@ -11,3 +11,10 @@
 ```
     python q_learning_frozenlake.py    
 ```
+
+* Sarsa and Q-learning for the Example 6.6: Cliff Walking. Pay attention to the difference in the optimal strategies learnd from the Sarsa and Q-learning
+
+```
+    python cliffwalk.py
+```
+
