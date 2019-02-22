@@ -1,8 +1,6 @@
-# Pytorch implementation of PG Pong
-# [Reference]
-# 1. Karpathy pg-pong.py: https://gist.github.com/karpathy/a4166c7fe253700972fcbc77e4ea32c5
-# 2. PyTorch official example: https://github.com/pytorch/examples/blob/master/reinforcement_learning/reinforce.py
-
+# Pytorch implementation of Actor-Critic on Pong
+#
+# Bolei Zhou, 22 Feb 2019
 import os
 import argparse
 import gym
@@ -15,11 +13,11 @@ import torch.nn.functional as F
 import torch.optim as optim
 from torch.autograd import Variable
 from torch.distributions import Categorical
-
+import pdb
 
 is_cuda = torch.cuda.is_available()
 
-parser = argparse.ArgumentParser(description='PyTorch policy gradient example at openai-gym pong')
+parser = argparse.ArgumentParser(description='PyTorch actor critic example at openai-gym pong')
 parser.add_argument('--gamma', type=float, default=0.99, metavar='G',
                     help='discount factor (default: 0.99')
 parser.add_argument('--decay_rate', type=float, default=0.99, metavar='G',
@@ -54,11 +52,13 @@ def prepro(I):
     return I.astype(np.float).ravel()
 
 
-class Policy(nn.Module):
+class ActorCritic(nn.Module):
     def __init__(self, num_actions=2):
-        super(Policy, self).__init__()
+        super(ActorCritic, self).__init__()
         self.affine1 = nn.Linear(6400, 200)
-        self.affine2 = nn.Linear(200, num_actions) # action 1: static, action 2: move up, action 3: move down
+        self.action_head = nn.Linear(200, num_actions) # action 1: static, action 2: move up, action 3: move down
+        self.value_head = nn.Linear(200, 1)
+
         self.num_actions = num_actions
         self.saved_log_probs = []
         self.rewards = []
@@ -68,32 +68,33 @@ class Policy(nn.Module):
 
     def forward(self, x):
         x = F.relu(self.affine1(x))
-        action_scores = self.affine2(x)
-        return F.softmax(action_scores, dim=1)
+        action_scores = self.action_head(x)
+        state_values = self.value_head(x)
+        return F.softmax(action_scores, dim=1), state_values
 
 
     def select_action(self, x):
         x = Variable(torch.from_numpy(x).float().unsqueeze(0))
         if is_cuda: x = x.cuda()
-        probs = self.forward(x)
+        probs, state_value = self.forward(x)
         m = Categorical(probs)
         if test == False and np.random.uniform() < 0.1:
             action = self.random.sample() # epsilon-greedy
         else:
             action = m.sample()
 
-        self.saved_log_probs.append(m.log_prob(action))
+        self.saved_log_probs.append((m.log_prob(action), state_value))
         return action
 
 # built policy network
-policy = Policy()
+policy = ActorCritic()
 if is_cuda:
     policy.cuda()
 
 # check & load pretrain model
-if os.path.isfile('pg_params.pkl'):
-    print('Load Policy Network parametets ...')
-    policy.load_state_dict(torch.load('pg_params.pkl'))
+if os.path.isfile('ac_params.pkl'):
+    print('Load Actor-Critic Network parametets ...')
+    policy.load_state_dict(torch.load('ac_params.pkl'))
 
 
 # construct a optimal function
@@ -103,6 +104,7 @@ optimizer = optim.RMSprop(policy.parameters(), lr=args.learning_rate, weight_dec
 def finish_episode():
     R = 0
     policy_loss = []
+    value_loss = []
     rewards = []
     for r in policy.rewards[::-1]:
         R = r + args.gamma * R
@@ -110,15 +112,19 @@ def finish_episode():
     # turn rewards to pytorch tensor and standardize
     rewards = torch.Tensor(rewards)
     rewards = (rewards - rewards.mean()) / (rewards.std() + 1e-6)
-
-    for log_prob, reward in zip(policy.saved_log_probs, rewards):
-        policy_loss.append(- log_prob * reward)
-
+    if is_cuda: rewards = rewards.cuda()
+    for (log_prob, value), reward in zip(policy.saved_log_probs, rewards):
+        advantage = reward - value
+        policy_loss.append(- log_prob * advantage)         # policy gradient
+        value_loss.append(F.smooth_l1_loss(value, reward)) # value function approximation
     optimizer.zero_grad()
-    policy_loss = torch.cat(policy_loss).sum()
+    policy_loss = torch.stack(policy_loss).sum()
+    value_loss = torch.stack(value_loss).sum()
+    both_loss = policy_loss + value_loss
     if is_cuda:
         policy_loss.cuda()
-    policy_loss.backward()
+        value_loss.cuda()
+    both_loss.backward()
     optimizer.step()
 
     # clean rewards and saved_actions
@@ -146,7 +152,7 @@ for i_episode in count(1):
         if done:
             # tracking log
             running_reward = reward_sum if running_reward is None else running_reward * 0.99 + reward_sum * 0.01
-            print('ep %03d done. reward: %f. reward running mean: %f' % (i_episode, reward_sum, running_reward))
+            print('actor-critic ep %03d done. reward: %f. reward running mean: %f' % (i_episode, reward_sum, running_reward))
             reward_sum = 0
             break
 
