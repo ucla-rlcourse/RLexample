@@ -17,6 +17,8 @@ from torch.autograd import Variable
 from torch.distributions import Categorical
 
 
+is_cuda = torch.cuda.is_available()
+
 parser = argparse.ArgumentParser(description='PyTorch policy gradient example at openai-gym pong')
 parser.add_argument('--gamma', type=float, default=0.99, metavar='G',
                     help='discount factor (default: 0.99')
@@ -24,7 +26,7 @@ parser.add_argument('--decay_rate', type=float, default=0.99, metavar='G',
                     help='decay rate for RMSprop (default: 0.99)')
 parser.add_argument('--learning_rate', type=float, default=1e-4, metavar='G',
                     help='learning rate (default: 1e-4)')
-parser.add_argument('--batch_size', type=int, default=10, metavar='G',
+parser.add_argument('--batch_size', type=int, default=20, metavar='G',
                     help='Every how many episodes to da a param update')
 parser.add_argument('--seed', type=int, default=87, metavar='N',
                     help='random seed (default: 87)')
@@ -35,6 +37,12 @@ env = gym.make('Pong-v0')
 env.seed(args.seed)
 torch.manual_seed(args.seed)
 
+D = 80 * 80
+test = False
+if test ==True:
+    render = True
+else:
+    render = False
 
 def prepro(I):
     """ prepro 210x160x3 into 6400 """
@@ -47,13 +55,16 @@ def prepro(I):
 
 
 class Policy(nn.Module):
-    def __init__(self):
+    def __init__(self, num_actions=2):
         super(Policy, self).__init__()
         self.affine1 = nn.Linear(6400, 200)
-        self.affine2 = nn.Linear(200, 3) # action 1: static, action 2: move up, action 3: move down
-
+        self.affine2 = nn.Linear(200, num_actions) # action 1: static, action 2: move up, action 3: move down
+        self.num_actions = num_actions
         self.saved_log_probs = []
         self.rewards = []
+        rand_var = torch.tensor([0.5,0.5])
+        if is_cuda: rand_var = rand_var.cuda()
+        self.random = Categorical(rand_var)
 
     def forward(self, x):
         x = F.relu(self.affine1(x))
@@ -61,9 +72,23 @@ class Policy(nn.Module):
         return F.softmax(action_scores, dim=1)
 
 
+    def select_action(self, x):
+        x = Variable(torch.from_numpy(x).float().unsqueeze(0))
+        if is_cuda: x = x.cuda()
+        probs = self.forward(x)
+        m = Categorical(probs)
+        if test == False and np.random.uniform() < 0.1:
+            action = self.random.sample() # epsilon-greedy
+        else:
+            action = m.sample()
+
+        self.saved_log_probs.append(m.log_prob(action))
+        return action
+
 # built policy network
 policy = Policy()
-
+if is_cuda:
+    policy.cuda()
 
 # check & load pretrain model
 if os.path.isfile('pg_params.pkl'):
@@ -73,15 +98,6 @@ if os.path.isfile('pg_params.pkl'):
 
 # construct a optimal function
 optimizer = optim.RMSprop(policy.parameters(), lr=args.learning_rate, weight_decay=args.decay_rate)
-
-
-def select_action(state):
-    state = torch.from_numpy(state).float().unsqueeze(0)
-    probs = policy(Variable(state))
-    m = Categorical(probs)
-    action = m.sample() # 從multinomial分佈中抽樣
-    policy.saved_log_probs.append(m.log_prob(action)) # 蒐集log action以利於backward
-    return action.data[0]
 
 
 def finish_episode():
@@ -96,10 +112,12 @@ def finish_episode():
     rewards = (rewards - rewards.mean()) / (rewards.std() + 1e-6)
 
     for log_prob, reward in zip(policy.saved_log_probs, rewards):
-        policy_loss.append(-log_prob * reward)
+        policy_loss.append(- log_prob * reward)
 
     optimizer.zero_grad()
     policy_loss = torch.cat(policy_loss).sum()
+    if is_cuda:
+        policy_loss.cuda()
     policy_loss.backward()
     optimizer.step()
 
@@ -111,29 +129,30 @@ def finish_episode():
 # Main loop
 running_reward = None
 reward_sum = 0
+prev_x = None
 for i_episode in count(1):
     state = env.reset()
     for t in range(10000):
-        state = prepro(state)
-        action = select_action(state)
-        action = action + 1
-        state, reward, done, _ = env.step(action)
+        if render: env.render()
+        cur_x = prepro(state)
+        x = cur_x - prev_x if prev_x is not None else np.zeros(D)
+        prev_x = cur_x
+        action = policy.select_action(x)
+        action_env = action + 2
+        state, reward, done, _ = env.step(action_env)
         reward_sum += reward
 
         policy.rewards.append(reward)
         if done:
             # tracking log
             running_reward = reward_sum if running_reward is None else running_reward * 0.99 + reward_sum * 0.01
-            print('resetting env. episode reward total was %f. running mean: %f' % (reward_sum, running_reward))
+            print('ep %03d done. reward: %f. reward running mean: %f' % (i_episode, reward_sum, running_reward))
             reward_sum = 0
             break
 
-        if reward != 0:
-            print('ep %d: game finished, reward: %f' % (i_episode, reward) + ('' if reward == -1 else ' !!!!!!!'))
 
     # use policy gradient update model weights
     if i_episode % args.batch_size == 0:
-        print('ep %d: policy network parameters updating...' % (i_episode))
         finish_episode()
 
     # Save model in every 50 episode
