@@ -22,7 +22,7 @@ parser.add_argument('--gamma', type=float, default=0.99, metavar='G',
                     help='discount factor (default: 0.99')
 parser.add_argument('--decay_rate', type=float, default=0.99, metavar='G',
                     help='decay rate for RMSprop (default: 0.99)')
-parser.add_argument('--learning_rate', type=float, default=1e-4, metavar='G',
+parser.add_argument('--learning_rate', type=float, default=3e-4, metavar='G',
                     help='learning rate (default: 1e-4)')
 parser.add_argument('--batch_size', type=int, default=20, metavar='G',
                     help='Every how many episodes to da a param update')
@@ -62,15 +62,12 @@ class ActorCritic(nn.Module):
         self.num_actions = num_actions
         self.saved_log_probs = []
         self.rewards = []
-        rand_var = torch.tensor([0.5,0.5])
-        if is_cuda: rand_var = rand_var.cuda()
-        self.random = Categorical(rand_var)
 
     def forward(self, x):
         x = F.relu(self.affine1(x))
         action_scores = self.action_head(x)
         state_values = self.value_head(x)
-        return F.softmax(action_scores, dim=1), state_values
+        return F.softmax(action_scores, dim=-1), state_values
 
 
     def select_action(self, x):
@@ -78,10 +75,7 @@ class ActorCritic(nn.Module):
         if is_cuda: x = x.cuda()
         probs, state_value = self.forward(x)
         m = Categorical(probs)
-        if test == False and np.random.uniform() < 0.1:
-            action = self.random.sample() # epsilon-greedy
-        else:
-            action = m.sample()
+        action = m.sample()
 
         self.saved_log_probs.append((m.log_prob(action), state_value))
         return action
@@ -99,7 +93,6 @@ if os.path.isfile('ac_params.pkl'):
 
 # construct a optimal function
 optimizer = optim.RMSprop(policy.parameters(), lr=args.learning_rate, weight_decay=args.decay_rate)
-
 
 def finish_episode():
     R = 0
@@ -120,11 +113,10 @@ def finish_episode():
     optimizer.zero_grad()
     policy_loss = torch.stack(policy_loss).sum()
     value_loss = torch.stack(value_loss).sum()
-    both_loss = policy_loss + value_loss
+    loss = policy_loss + value_loss
     if is_cuda:
-        policy_loss.cuda()
-        value_loss.cuda()
-    both_loss.backward()
+        loss.cuda()
+    loss.backward()
     optimizer.step()
 
     # clean rewards and saved_actions
