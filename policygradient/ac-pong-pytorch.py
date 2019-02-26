@@ -156,7 +156,7 @@ for i_episode in count(1):
     # Save model in every 50 episode
     if i_episode % 50 == 0:
         print('ep %d: model saving...' % (i_episode))
-        torch.save(policy.state_dict(), 'pg_params.pkl')
+        torch.save(policy.state_dict(), 'ac_params.pkl')
 
 
 
