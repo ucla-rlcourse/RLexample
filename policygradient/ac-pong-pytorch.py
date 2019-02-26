@@ -36,7 +36,7 @@ env.seed(args.seed)
 torch.manual_seed(args.seed)
 
 D = 80 * 80
-test = False
+test = True
 if test ==True:
     render = True
 else:
@@ -88,7 +88,10 @@ if is_cuda:
 # check & load pretrain model
 if os.path.isfile('ac_params.pkl'):
     print('Load Actor-Critic Network parametets ...')
-    policy.load_state_dict(torch.load('ac_params.pkl'))
+    if is_cuda:
+        policy.load_state_dict(torch.load('ac_params.pkl'))
+    else:
+        policy.load_state_dict(torch.load('ac_params.pkl', map_location=lambda storage, loc: storage))
 
 
 # construct a optimal function
@@ -127,9 +130,9 @@ def finish_episode():
 # Main loop
 running_reward = None
 reward_sum = 0
-prev_x = None
 for i_episode in count(1):
     state = env.reset()
+    prev_x = None
     for t in range(10000):
         if render: env.render()
         cur_x = prepro(state)
@@ -150,11 +153,11 @@ for i_episode in count(1):
 
 
     # use policy gradient update model weights
-    if i_episode % args.batch_size == 0:
+    if i_episode % args.batch_size == 0 and test == False:
         finish_episode()
 
     # Save model in every 50 episode
-    if i_episode % 50 == 0:
+    if i_episode % 50 == 0 and test == False:
         print('ep %d: model saving...' % (i_episode))
         torch.save(policy.state_dict(), 'ac_params.pkl')
 
