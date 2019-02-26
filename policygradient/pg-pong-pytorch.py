@@ -77,10 +77,7 @@ class Policy(nn.Module):
         if is_cuda: x = x.cuda()
         probs = self.forward(x)
         m = Categorical(probs)
-        if test == False and np.random.uniform() < 0.1:
-            action = self.random.sample() # epsilon-greedy
-        else:
-            action = m.sample()
+        action = m.sample()
 
         self.saved_log_probs.append(m.log_prob(action))
         return action
