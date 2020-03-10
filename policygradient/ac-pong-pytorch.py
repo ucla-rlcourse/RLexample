@@ -104,10 +104,9 @@ def finish_episode():
     policy_loss = []
     value_loss = []
     rewards = []
-    for i in range(len(policy.rewards)-1):
-        r = policy.rewards[i]
-        R = r + args.gamma * policy.saved_log_probs[i+1][1] # bootstrapped reward
-        rewards.append(R)
+    for i, r in enumerate(policy.rewards[::-1]):
+        R = r + args.gamma * policy.saved_log_probs[-1-i][1] # bootstrapped reward
+        rewards.insert(0, R)
     if is_cuda: rewards = rewards.cuda()
     for (log_prob, value), reward in zip(policy.saved_log_probs, rewards):
         advantage = reward - value # A(s,a) = r + gamma V(s_t+1) - V(s_t)
