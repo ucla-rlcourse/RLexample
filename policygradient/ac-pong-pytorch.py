@@ -27,6 +27,9 @@ parser.add_argument('--batch_size', type=int, default=20, metavar='G',
                     help='Every how many episodes to da a param update')
 parser.add_argument('--seed', type=int, default=87, metavar='N',
                     help='random seed (default: 87)')
+parser.add_argument('--test', action='store_true',
+        help='whether to test the trained model or keep training')
+
 args = parser.parse_args()
 
 
@@ -35,7 +38,7 @@ env.seed(args.seed)
 torch.manual_seed(args.seed)
 
 D = 80 * 80
-test = False
+test = args.test
 if test ==True:
     render = True
 else:
