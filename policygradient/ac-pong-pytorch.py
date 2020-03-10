@@ -79,7 +79,7 @@ class AC(nn.Module):
         m = Categorical(probs)
         action = m.sample()
 
-        self.saved_log_probs.append((m.log_prob(action), state_value))
+        self.saved_log_probs[-1].append((m.log_prob(action), state_value))
         return action
 
 # built policy network
@@ -104,14 +104,20 @@ def finish_episode():
     policy_loss = []
     value_loss = []
     rewards = []
-    for i, r in enumerate(policy.rewards[::-1]):
-        R = r + args.gamma * policy.saved_log_probs[-1-i][1] # bootstrapped reward
-        rewards.insert(0, R)
+    for episode_id, episode_reward_list in enumerate(policy.rewards):
+        for i, r in enumerate(episode_reward_list):
+            if i == len(episode_reward_list) - 1:
+                R = torch.scalar_tensor(r)
+            else:
+                R = r + args.gamma * policy.saved_log_probs[episode_id][i + 1][1]
+            rewards.append(R)
     if is_cuda: rewards = rewards.cuda()
-    for (log_prob, value), reward in zip(policy.saved_log_probs, rewards):
+    flatten_log_probs = [sample for episode in policy.saved_log_probs for sample in episode]
+    assert len(flatten_log_probs) == len(rewards)
+    for (log_prob, value), reward in zip(flatten_log_probs, rewards):
         advantage = reward - value # A(s,a) = r + gamma V(s_t+1) - V(s_t)
         policy_loss.append(- log_prob * advantage)         # policy gradient
-        value_loss.append(F.smooth_l1_loss(value, reward)) # value function approximation
+        value_loss.append(F.smooth_l1_loss(value.reshape(-1), reward.reshape(-1))) # value function approximation
     optimizer.zero_grad()
     policy_loss = torch.stack(policy_loss).sum()
     value_loss = torch.stack(value_loss).sum()
@@ -132,6 +138,8 @@ reward_sum = 0
 for i_episode in count(1):
     state = env.reset()
     prev_x = None
+    policy.rewards.append([])  # record rewards separately for each episode
+    policy.saved_log_probs.append([])
     for t in range(10000):
         if render: env.render()
         cur_x = prepro(state)
@@ -142,7 +150,7 @@ for i_episode in count(1):
         state, reward, done, _ = env.step(action_env)
         reward_sum += reward
 
-        policy.rewards.append(reward)
+        policy.rewards[-1].append(reward)
         if done:
             # tracking log
             running_reward = reward_sum if running_reward is None else running_reward * 0.99 + reward_sum * 0.01
