@@ -48,6 +48,8 @@ def obs_to_state(env, obs):
     env_dx = (env_high - env_low) / n_states
     a = int((obs[0] - env_low[0])/env_dx[0])
     b = int((obs[1] - env_low[1])/env_dx[1])
+    a = a if a < n_states else n_states - 1
+    b = b if b < n_states else n_states - 1
     return a, b
 
 if __name__ == '__main__':
