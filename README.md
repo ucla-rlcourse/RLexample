@@ -19,7 +19,7 @@ env.reset()
 for _ in range(1000):
     env.render()
     env.step(env.action_space.sample()) # take a random action
-
+env.close()
 ```
 
 * Random play with ```CartPole-v0```
@@ -34,6 +34,7 @@ for i_episode in range(20):
         print(observation)
         action = env.action_space.sample()
         observation, reward, done, info = env.step(action)
+env.close()
 ```
 
 * Example code for random playing (```Pong-ram-v0```,```Acrobot-v1```,```Breakout-v0```)
