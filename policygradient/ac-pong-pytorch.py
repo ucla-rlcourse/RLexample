@@ -29,7 +29,8 @@ parser.add_argument('--seed', type=int, default=87, metavar='N',
                     help='random seed (default: 87)')
 parser.add_argument('--test', action='store_true',
         help='whether to test the trained model or keep training')
-
+parser.add_argument('--max-grad-norm', type=float, default=10)
+parser.add_argument('--value-loss-coef', type=float, default=0.5)
 args = parser.parse_args()
 
 
@@ -121,10 +122,11 @@ def finish_episode():
     optimizer.zero_grad()
     policy_loss = torch.stack(policy_loss).sum()
     value_loss = torch.stack(value_loss).sum()
-    loss = policy_loss + value_loss
+    loss = policy_loss + args.value_loss_coef * value_loss
     if is_cuda:
         loss.cuda()
     loss.backward()
+    torch.nn.utils.clip_grad_norm_(policy.parameters(), args.max_grad_norm) # gradient clip
     optimizer.step()
 
     # clean rewards and saved_actions
