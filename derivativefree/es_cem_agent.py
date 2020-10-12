@@ -23,9 +23,9 @@ class ContinuousActionLinearPolicy(object):
         a = ob.dot(self.W) + self.b
         return a
 
-def es(f, th_mean, batch_size, n_iter, eps = 0.01, lr=0.01):
+def es(f, th_mean, batch_size, n_iter, eps = 0.1, lr=0.01):
     """
-    Generic implementation of the evolution strategy method for maximizing a black-box function
+    implementation of the evolution strategy method for maximizing a black-box function
 
     f: a function mapping from vector -> scalar
     th_mean: initial mean over input distribution
@@ -33,15 +33,16 @@ def es(f, th_mean, batch_size, n_iter, eps = 0.01, lr=0.01):
     n_iter: number of batches
     """
     for _ in range(n_iter):
-        ths = np.array([th_mean + eps *dth for dth in np.random.randn(batch_size, th_mean.size)])
+        ds = np.array([dth for dth in np.random.randn(batch_size, th_mean.size)]) # perturbations
+        ths = np.array([th_mean + eps *dth for dth in ds]) # perturbed parameters
         ys = np.array([f(th) for th in ths]) # here is the reward for each episode
-        delta_ths = np.array([ths[i]*ys[i] for i in range(len(ys))])
+        delta_ths = np.array([ds[i]*ys[i] for i in range(len(ys))])
         th_mean = th_mean + lr * delta_ths.mean(axis=0)
         yield {'ys' : ys, 'theta_mean' : th_mean, 'y_mean' : ys.mean()}
 
 def cem(f, th_mean, batch_size, n_iter, elite_frac, initial_std=1.0):
     """
-    Generic implementation of the cross-entropy method for maximizing a black-box function
+    implementation of the cross-entropy method for maximizing a black-box function
 
     f: a function mapping from vector -> scalar
     th_mean: initial mean over input distribution
