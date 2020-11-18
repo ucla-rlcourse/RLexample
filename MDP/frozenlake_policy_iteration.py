@@ -59,7 +59,6 @@ def policy_iteration(env, gamma = 1.0):
     """ Policy-Iteration algorithm """
     policy = np.random.choice(env.env.nA, size=(env.env.nS))  # initialize a random policy
     max_iterations = 200000
-    gamma = 1.0
     for i in range(max_iterations):
         old_policy_v = compute_policy_v(env, policy, gamma)
         new_policy = extract_policy(old_policy_v, gamma)
