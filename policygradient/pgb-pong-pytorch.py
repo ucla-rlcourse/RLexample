@@ -115,6 +115,7 @@ def finish_episode():
         rewards = rewards.cuda()
     for (log_prob, value), reward in zip(policy.saved_log_probs, rewards):
         advantage = reward - value
+        advantage = advantage.detach()
         policy_loss.append(- log_prob * advantage)         # policy gradient
         value_loss.append(F.smooth_l1_loss(value, reward)) # value function approximation
     optimizer.zero_grad()
