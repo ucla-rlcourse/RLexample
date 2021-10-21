@@ -111,8 +111,9 @@ def finish_episode():
                 R = torch.scalar_tensor(r)
             else:
                 R = r + args.gamma * policy.saved_log_probs[episode_id][i + 1][1]
+            if is_cuda:
+                R = R.cuda()
             rewards.append(R)
-    if is_cuda: rewards = rewards.cuda()
     flatten_log_probs = [sample for episode in policy.saved_log_probs for sample in episode]
     assert len(flatten_log_probs) == len(rewards)
     for (log_prob, value), reward in zip(flatten_log_probs, rewards):

@@ -111,7 +111,8 @@ def finish_episode():
     # turn rewards to pytorch tensor and standardize
     rewards = torch.Tensor(rewards)
     rewards = (rewards - rewards.mean()) / (rewards.std() + 1e-6)
-    if is_cuda: rewards = rewards.cuda()
+    if is_cuda:
+        rewards = rewards.cuda()
     for (log_prob, value), reward in zip(policy.saved_log_probs, rewards):
         advantage = reward - value
         policy_loss.append(- log_prob * advantage)         # policy gradient
