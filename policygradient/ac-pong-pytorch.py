@@ -118,6 +118,7 @@ def finish_episode():
     assert len(flatten_log_probs) == len(rewards)
     for (log_prob, value), reward in zip(flatten_log_probs, rewards):
         advantage = reward - value # A(s,a) = r + gamma V(s_t+1) - V(s_t)
+        advantage = advantage.detach()
         policy_loss.append(- log_prob * advantage)         # policy gradient
         value_loss.append(F.smooth_l1_loss(value.reshape(-1), reward.reshape(-1))) # value function approximation
     optimizer.zero_grad()
