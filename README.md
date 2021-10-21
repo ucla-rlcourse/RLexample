@@ -5,8 +5,7 @@
 * Download and install Anaconda [here](https://www.anaconda.com/download)
 * Install OpenAI gym
 ```
-pip install gym
-pip install gym[atari]
+pip install gym[all]==0.18.0
 ```
 
 ## Examples
