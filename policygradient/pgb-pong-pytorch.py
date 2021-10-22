@@ -30,6 +30,8 @@ parser.add_argument('--seed', type=int, default=87, metavar='N',
                     help='random seed (default: 87)')
 parser.add_argument('--test', action='store_true',
         help='whether to test the trained model or keep training')
+parser.add_argument('--use_value_gradient', action='store_true',
+        help='whether to pass gradient to value network when computing policy loss. Test purpose only!')
 
 args = parser.parse_args()
 
@@ -115,7 +117,10 @@ def finish_episode():
         rewards = rewards.cuda()
     for (log_prob, value), reward in zip(policy.saved_log_probs, rewards):
         advantage = reward - value
-        advantage = advantage.detach()
+        if args.use_value_gradient:
+            pass
+        else:
+            advantage = advantage.detach()
         policy_loss.append(- log_prob * advantage)         # policy gradient
         value_loss.append(F.smooth_l1_loss(value, reward)) # value function approximation
     optimizer.zero_grad()
