@@ -32,6 +32,9 @@ parser.add_argument('--test', action='store_true',
         help='whether to test the trained model or keep training')
 parser.add_argument('--use_value_gradient', action='store_true',
         help='whether to pass gradient to value network when computing policy loss. Test purpose only!')
+parser.add_argument('--disable_model_loading', action='store_true',
+        help='whether to skip the model loading process. Test purpose only!')
+
 
 args = parser.parse_args()
 
@@ -91,7 +94,7 @@ if is_cuda:
     policy.cuda()
 
 # check & load pretrain model
-if os.path.isfile('pgb_params.pkl'):
+if os.path.isfile('pgb_params.pkl') and (not args.disable_model_loading):
     print('Load PGbaseline Network parametets ...')
     if is_cuda:
         policy.load_state_dict(torch.load('pgb_params.pkl'))
@@ -167,7 +170,7 @@ for i_episode in count(1):
         finish_episode()
 
     # Save model in every 50 episode
-    if i_episode % 50 == 0 and test == False:
+    if (i_episode % 50 == 0) and (test == False) and (not args.disable_model_loading):
         print('ep %d: model saving...' % (i_episode))
         torch.save(policy.state_dict(), 'pgb_params.pkl')
 
