@@ -1,22 +1,37 @@
 # Some basic examples for reinforcement learning
 
-## Installing Anaconda and OpenAI gym
+## Installing Anaconda and Gymnasium
 
 * Download and install Anaconda [here](https://www.anaconda.com/download)
-* Install OpenAI gym
+* Create conda env for managing dependencies and activate the conda env
 ```
-pip install gym[all]==0.18.0
+conda create -n conda_env
+conda activate conda_env
+```
+* Install gymnasium (Dependencies installed by pip will also go to the conda env)
+```
+pip install gymnasium[all]
+```
+* Install torch with either conda or pip
+```
+conda install pytorch torchvision torchaudio pytorch-cuda=12.1 -c pytorch -c nvidia
+```
+```
+pip install torch torchvision torchaudio
 ```
 
 ## Examples
 
-* Play with the environment
+* Play with the environment and visualize the agent behaviour
 ```
-import gym
-env = gym.make('CartPole-v0')
-env.reset()
+import gymnasium as gym
+render = True # switch if visualize the agent
+if render:
+    env = gym.make('CartPole-v0', render_mode='human')
+else:
+    env = gym.make('CartPole-v0')
+env.reset(seed=0)
 for _ in range(1000):
-    env.render()
     env.step(env.action_space.sample()) # take a random action
 env.close()
 ```
@@ -24,15 +39,15 @@ env.close()
 * Random play with ```CartPole-v0```
 
 ```
-import gym
+import gymnasium as gym
 env = gym.make('CartPole-v0')
 for i_episode in range(20):
     observation = env.reset()
     for t in range(100):
-        env.render()
         print(observation)
         action = env.action_space.sample()
-        observation, reward, done, info = env.step(action)
+        observation, reward, terminated, truncated, info = env.step(action)
+        done = np.logical_or(terminated, truncated)
 env.close()
 ```
 
