@@ -1,4 +1,5 @@
-import gym
+import gymnasium as gym
+import numpy as np
 import argparse
 ## random agent
 class RandomAgent(object):
@@ -23,7 +24,7 @@ if __name__ == '__main__':
     parser.add_argument('game', nargs="?", default="CartPole-v0")
     args = parser.parse_args()
 
-    env = gym.make(args.game)
+    env = gym.make(args.game, render_mode='human')
     num_episodes = 20
     num_maxstep = 100
 
@@ -37,15 +38,14 @@ if __name__ == '__main__':
     done = False
 
     for i_episode in range(num_episodes):
-        observation = env.reset()
+        observation, _ = env.reset()
         for t in range(num_maxstep):
             env.render()
             action = agent.act(observation, reward, done)
-            observation, reward, done, info = env.step(action)
+            observation, reward, terminated, truncated, info = env.step(action)
+            done = np.logical_or(terminated, truncated)
             print('episode {}-step {}, taking action {}, observation {}'.format(i_episode, t, action, observation))
-        #if done and False:
-        #    print("Episode finished after {} timesteps".format(t+1))
-        #    break
+        
         env.close()
 
 

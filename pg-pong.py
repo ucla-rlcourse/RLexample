@@ -2,7 +2,7 @@
 """ Trains an agent with (stochastic) Policy Gradients on Pong. Uses OpenAI Gym. """
 import numpy as np
 import pickle
-import gym
+import gymnasium as gym
 
 # hyperparameters
 H = 200 # number of hidden layer neurons
@@ -41,7 +41,7 @@ def prepro(I):
   I[I == 144] = 0 # erase background (background type 1)
   I[I == 109] = 0 # erase background (background type 2)
   I[I != 0] = 1 # everything else (paddles, ball) just set to 1
-  return I.astype(np.float).ravel()
+  return I.astype(np.float32).ravel()
 
 def discount_rewards(r):
   """ take 1D float array of rewards and compute discounted reward """
@@ -68,8 +68,11 @@ def policy_backward(eph, epdlogp):
   dW1 = np.dot(dh.T, epx)
   return {'W1':dW1, 'W2':dW2}
 
-env = gym.make("Pong-v0")
-observation = env.reset()
+if render:
+  env = gym.make("Pong-v0", render_mode='human')
+else:
+  env = gym.make("Pong-v0")
+observation, _ = env.reset()
 prev_x = None # used in computing the difference frame
 xs,hs,dlogps,drs = [],[],[],[]
 running_reward = None
@@ -97,7 +100,8 @@ while True:
   dlogps.append(y - aprob) # grad that encourages the action that was taken to be taken (see http://cs231n.github.io/neural-networks-2/#losses if confused)
 
   # step the environment and get new measurements
-  observation, reward, done, info = env.step(action)
+  observation, reward, terminated, truncated, info = env.step(action)
+  done = np.logical_or(terminated, truncated)
   reward_sum += reward
 
   drs.append(reward) # record reward (has to be done after we call step() to get reward for previous action)
@@ -135,7 +139,7 @@ while True:
     print('resetting env. episode reward total was %f. running mean: %f' % (reward_sum, running_reward))
     if episode_number % 100 == 0: pickle.dump(model, open(save_file, 'wb'))
     reward_sum = 0
-    observation = env.reset() # reset env
+    observation, _ = env.reset() # reset env
     prev_x = None
 
   if reward != 0: # Pong has either +1 or -1 reward exactly when game ends.
