@@ -4,11 +4,11 @@ Solving FrozenLake environment using Value-Itertion.
 Updated 17 Aug 2020
 """
 import numpy as np
-import gym
-from gym import wrappers
-from gym.envs.registration import register
+import gymnasium as gym
+from gymnasium import wrappers
+from gymnasium.envs.registration import register
 
-def run_episode(env, policy, gamma = 1.0, render = False):
+def run_episode(env, policy, gamma = 1.0):
     """ Evaluates policy by using it to run an episode and finding its
     total reward.
 
@@ -21,13 +21,12 @@ def run_episode(env, policy, gamma = 1.0, render = False):
     returns:
     total reward: real value of the total reward recieved by agent under policy.
     """
-    obs = env.reset()
+    obs, _ = env.reset()
     total_reward = 0
     step_idx = 0
     while True:
-        if render:
-            env.render()
-        obs, reward, done , _ = env.step(int(policy[obs]))
+        obs, reward, terminated, truncated, _ = env.step(int(policy[obs]))
+        done = np.logical_or(terminated, truncated) # here use the logical or, one can use terminal
         total_reward += (gamma ** step_idx * reward)
         step_idx += 1
         if done:
@@ -41,14 +40,14 @@ def evaluate_policy(env, policy, gamma = 1.0,  n = 100):
     average total reward
     """
     scores = [
-            run_episode(env, policy, gamma = gamma, render = False)
+            run_episode(env, policy, gamma = gamma)
             for _ in range(n)]
     return np.mean(scores)
 
 def extract_policy(v, gamma = 1.0):
     """ Extract the policy given a value-function """
-    policy = np.zeros(env.env.nS)
-    for s in range(env.env.nS):
+    policy = np.zeros(env.env.observation_space.n)
+    for s in range(env.env.observation_space.n):
         q_sa = np.zeros(env.action_space.n)
         for a in range(env.action_space.n):
             for next_sr in env.env.P[s][a]:
@@ -61,13 +60,13 @@ def extract_policy(v, gamma = 1.0):
 
 def value_iteration(env, gamma = 1.0):
     """ Value-iteration algorithm """
-    v = np.zeros(env.env.nS)  # initialize value-function
+    v = np.zeros(env.env.observation_space.n)  # initialize value-function
     max_iterations = 100000
     eps = 1e-20
     for i in range(max_iterations):
         prev_v = np.copy(v)
-        for s in range(env.env.nS):
-            q_sa = [sum([p*(r + gamma * prev_v[s_]) for p, s_, r, _ in env.env.P[s][a]]) for a in range(env.env.nA)] 
+        for s in range(env.env.observation_space.n):
+            q_sa = [sum([p*(r + gamma * prev_v[s_]) for p, s_, r, _ in env.env.P[s][a]]) for a in range(env.env.action_space.n)] 
             v[s] = max(q_sa)
         if (np.sum(np.fabs(prev_v - v)) <= eps):
             print ('Value-iteration converged at iteration# %d.' %(i+1))
@@ -76,11 +75,14 @@ def value_iteration(env, gamma = 1.0):
 
 
 if __name__ == '__main__':
-
-    env_name  = 'FrozenLake-v0' # 'FrozenLake8x8-v0'
-    env = gym.make(env_name)
+    render = True
+    env_name  = 'FrozenLake-v1' # 'FrozenLake8x8-v0'
+    if render:
+        env = gym.make(env_name, render_mode='human')
+    else:
+        env = gym.make(env_name)
     gamma = 1.0
-    optimal_v = value_iteration(env, gamma);
+    optimal_v = value_iteration(env, gamma)
     policy = extract_policy(optimal_v, gamma)
     policy_score = evaluate_policy(env, policy, gamma, n=1000)
     print('Policy average score = ', policy_score)

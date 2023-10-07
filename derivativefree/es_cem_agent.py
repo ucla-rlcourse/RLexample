@@ -1,7 +1,7 @@
 # demonstration of derivative-free methods evolution strategy and cross-entropy method
 # by Bolei
 
-import gym
+import gymnasium as gym
 import numpy as np
 import argparse
 
@@ -65,10 +65,11 @@ def cem(f, th_mean, batch_size, n_iter, elite_frac, initial_std=1.0):
 
 def do_rollout(agent, env, num_steps, render=False):
     total_rew = 0
-    ob = env.reset()
+    ob = env.reset(seed=0)
     for t in range(num_steps):
         a = agent.act(ob)
-        (ob, reward, done, _info) = env.step(a)
+        (ob, reward, terminated, truncated, _info) = env.step(a)
+        done = np.logical_or(terminated, truncated)
         total_rew += reward
         if render and t%3==0: env.render()
         if done: break
@@ -89,7 +90,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     env = gym.make(args.env)
-    env.seed(0)
+    # env.seed(0)
     np.random.seed(0)
 
     # Train the agent, and snapshot each stage
