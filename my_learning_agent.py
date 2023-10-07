@@ -52,7 +52,7 @@ if __name__ == '__main__':
     parser.add_argument('target', nargs="?", default="CartPole-v0")
     args = parser.parse_args()
 
-    env = gym.make(args.target, render_mode='rbg_array')
+    env = gym.make(args.target, render_mode='human')
     np.random.seed(0)
     params = dict(n_iter=100, batch_size=10, elite_frac = 0.2)
     num_steps = 200

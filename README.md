@@ -12,6 +12,10 @@ conda activate conda_env
 ```
 pip install gymnasium[all]
 ```
+* Install ai2thor if you want to run navigation_agent.py
+```
+pip install ai2thor==2.4.10
+```
 * Install torch with either conda or pip
 ```
 conda install pytorch torchvision torchaudio pytorch-cuda=12.1 -c pytorch -c nvidia

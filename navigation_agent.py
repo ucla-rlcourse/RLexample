@@ -28,6 +28,8 @@ for i in range(200):
         # input your action
         key = int(input('press 1,2,3,4,5,6\n')) # type 1,2,3,4,5
         action_id = key-1
+    
+    print("step")
     event = controller.step(dict(action=actions[action_id]))
     plt.imshow(event.frame)
     time.sleep(0.2)
