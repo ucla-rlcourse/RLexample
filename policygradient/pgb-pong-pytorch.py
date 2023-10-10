@@ -21,8 +21,6 @@ is_cuda = torch.cuda.is_available()
 parser = argparse.ArgumentParser(description='PyTorch PG with baseline example at openai-gym pong')
 parser.add_argument('--gamma', type=float, default=0.99, metavar='G',
                     help='discount factor (default: 0.99')
-parser.add_argument('--decay_rate', type=float, default=0.99, metavar='G',
-                    help='decay rate for RMSprop (default: 0.99)')
 parser.add_argument('--learning_rate', type=float, default=1e-4, metavar='G',
                     help='learning rate (default: 1e-4)')
 parser.add_argument('--batch_size', type=int, default=20, metavar='G',
@@ -96,7 +94,7 @@ if is_cuda:
     policy.cuda()
 
 # check & load pretrain model
-if os.path.isfile('pgb_params.pkl') and (not args.disable_model_loading):
+if os.path.isfile('pgb_params.pkl'):
     print('Load PGbaseline Network parameters ...')
     if is_cuda:
         policy.load_state_dict(torch.load('pgb_params.pkl'))
@@ -104,7 +102,7 @@ if os.path.isfile('pgb_params.pkl') and (not args.disable_model_loading):
         policy.load_state_dict(torch.load('pgb_params.pkl', map_location=lambda storage, loc: storage))
 
 # construct a optimal function
-optimizer = optim.RMSprop(policy.parameters(), lr=args.learning_rate, weight_decay=args.decay_rate)
+optimizer = optim.Adam(policy.parameters(), lr=args.learning_rate)
 
 
 def finish_episode():
@@ -179,6 +177,6 @@ for i_episode in count(1):
         finish_episode()
 
     # Save model in every 50 episode
-    if (i_episode % 50 == 0) and (test == False) and (not args.disable_model_loading):
+    if (i_episode % 50 == 0) and (test == False):
         print('ep %d: model saving...' % (i_episode))
         torch.save(policy.state_dict(), 'pgb_params.pkl')

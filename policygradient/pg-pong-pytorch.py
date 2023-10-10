@@ -21,8 +21,6 @@ is_cuda = torch.cuda.is_available()
 parser = argparse.ArgumentParser(description='PyTorch policy gradient example at openai-gym pong')
 parser.add_argument('--gamma', type=float, default=0.99, metavar='G',
                     help='discount factor (default: 0.99')
-parser.add_argument('--decay_rate', type=float, default=0.99, metavar='G',
-                    help='decay rate for RMSprop (default: 0.99)')
 parser.add_argument('--learning_rate', type=float, default=1e-4, metavar='G',
                     help='learning rate (default: 1e-4)')
 parser.add_argument('--batch_size', type=int, default=20, metavar='G',
@@ -100,7 +98,7 @@ if os.path.isfile('pg_params.pkl'):
     policy.load_state_dict(torch.load('pg_params.pkl'))
 
 # construct a optimal function
-optimizer = optim.RMSprop(policy.parameters(), lr=args.learning_rate, weight_decay=args.decay_rate)
+optimizer = optim.Adam(policy.parameters(), lr=args.learning_rate)
 
 
 def finish_episode():
