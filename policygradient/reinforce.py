@@ -1,5 +1,5 @@
 import argparse
-import gym
+import gymnasium as gym
 import numpy as np
 from itertools import count
 
@@ -22,8 +22,10 @@ parser.add_argument('--log-interval', type=int, default=10, metavar='N',
 args = parser.parse_args()
 
 
-env = gym.make('CartPole-v1')
-env.seed(args.seed)
+if args.render:
+    env = gym.make('CartPole-v1', render_mode='human')
+else:
+    env = gym.make('CartPole-v1')
 torch.manual_seed(args.seed)
 
 
@@ -81,10 +83,12 @@ def finish_episode():
 def main():
     running_reward = 10
     for i_episode in count(1):
-        state, ep_reward = env.reset(), 0
+        state, _ = env.reset(seed=args.seed)
+        ep_reward = 0
         for t in range(1, 10000):  # Don't infinite loop while learning
             action = select_action(state)
-            state, reward, done, _ = env.step(action)
+            state, reward, terminated, truncated, _ = env.step(action)
+            done = np.logical_or(terminated, truncated)
             if args.render:
                 env.render()
             policy.rewards.append(reward)

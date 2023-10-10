@@ -6,7 +6,7 @@ import argparse
 import os
 from itertools import count
 
-import gym
+import gymnasium as gym
 import numpy as np
 import torch
 import torch.nn as nn
@@ -38,7 +38,6 @@ parser.add_argument('--disable_model_loading', action='store_true',
 args = parser.parse_args()
 
 env = gym.make('Pong-v0')
-env.seed(args.seed)
 torch.manual_seed(args.seed)
 
 D = 80 * 80
@@ -56,7 +55,7 @@ def prepro(I):
     I[I == 144] = 0
     I[I == 109] = 0
     I[I != 0] = 1
-    return I.astype(np.float).ravel()
+    return I.astype(np.float32).ravel()
 
 
 class PGbaseline(nn.Module):
@@ -143,7 +142,7 @@ def finish_episode():
 running_reward = None
 reward_sum = 0
 for i_episode in count(1):
-    state = env.reset()
+    state, _ = env.reset(seed=args.seed)
     prev_x = None
     for t in range(10000):
         if render: env.render()
@@ -152,7 +151,8 @@ for i_episode in count(1):
         prev_x = cur_x
         action = policy.select_action(x)
         action_env = action + 2
-        state, reward, done, _ = env.step(action_env)
+        state, reward, terminated, truncated, _ = env.step(action_env)
+        done = np.logical_or(terminated, truncated)
         reward_sum += reward
 
         policy.rewards.append(reward)

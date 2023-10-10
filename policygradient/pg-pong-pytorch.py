@@ -5,7 +5,7 @@
 
 import os
 import argparse
-import gym
+import gymnasium as gym
 import numpy as np
 from itertools import count
 
@@ -36,8 +36,7 @@ parser.add_argument('--test', action='store_true',
 args = parser.parse_args()
 
 
-env = gym.make('Pong-v0')
-env.seed(args.seed)
+# env.seed(args.seed)
 torch.manual_seed(args.seed)
 
 D = 80 * 80
@@ -46,6 +45,11 @@ if test ==True:
     render = True
 else:
     render = False
+
+if render:
+    env = gym.make('Pong-v0', render_mode='human')
+else:
+    env = gym.make('Pong-v0')
 
 def prepro(I):
     """ prepro 210x160x3 into 6400 """
@@ -130,15 +134,15 @@ running_reward = None
 reward_sum = 0
 prev_x = None
 for i_episode in count(1):
-    state = env.reset()
+    state, _ = env.reset()
     for t in range(10000):
-        if render: env.render()
         cur_x = prepro(state)
         x = cur_x - prev_x if prev_x is not None else np.zeros(D)
         prev_x = cur_x
         action = policy.select_action(x)
         action_env = action + 2
-        state, reward, done, _ = env.step(action_env)
+        state, reward, terminated, truncated, _ = env.step(action_env)
+        done = np.logical_or(terminated, truncated)
         reward_sum += reward
 
         policy.rewards.append(reward)
