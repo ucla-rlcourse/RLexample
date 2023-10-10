@@ -83,7 +83,7 @@ def finish_episode():
 def main():
     running_reward = 10
     for i_episode in count(1):
-        state, _ = env.reset(seed=args.seed)
+        state, _ = env.reset(seed=args.seed + i_episode)
         ep_reward = 0
         for t in range(1, 10000):  # Don't infinite loop while learning
             action = select_action(state)
