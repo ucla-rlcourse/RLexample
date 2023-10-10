@@ -58,7 +58,7 @@ def prepro(I):
     I[I == 144] = 0
     I[I == 109] = 0
     I[I != 0 ] = 1
-    return I.astype(np.float).ravel()
+    return I.astype(float).ravel()
 
 
 class Policy(nn.Module):

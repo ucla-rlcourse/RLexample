@@ -1,7 +1,7 @@
 
 # Example for multi-armed bandits
 
-Several standard algorithms for solving the multi-armed badits problem:
+Several standard algorithms for solving the multi-armed bandits problem:
 
 * epsilon-greedy
 * softmax
