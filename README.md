@@ -23,6 +23,10 @@ conda install pytorch torchvision torchaudio pytorch-cuda=12.1 -c pytorch -c nvi
 ```
 pip install torch torchvision torchaudio
 ```
+* Install other dependencies
+```
+pip install numpy pandas matplotlib
+```
 
 ## Examples
 
