@@ -63,15 +63,14 @@ def cem(f, th_mean, batch_size, n_iter, elite_frac, initial_std=1.0):
         th_std = elite_ths.std(axis=0)
         yield {'ys' : ys, 'theta_mean' : th_mean, 'y_mean' : ys.mean()}
 
-def do_rollout(agent, env, num_steps, render=False):
+def do_rollout(agent, env, num_steps):
     total_rew = 0
-    ob = env.reset(seed=0)
+    ob, _ = env.reset(seed=0)
     for t in range(num_steps):
         a = agent.act(ob)
         (ob, reward, terminated, truncated, _info) = env.step(a)
         done = np.logical_or(terminated, truncated)
         total_rew += reward
-        if render and t%3==0: env.render()
         if done: break
     return total_rew, t+1
 
@@ -89,7 +88,7 @@ if __name__ == '__main__':
     parser.add_argument('--n_iter', default=100)
     args = parser.parse_args()
 
-    env = gym.make(args.env)
+    env = gym.make(args.env, render_mode='human')
     # env.seed(0)
     np.random.seed(0)
 
@@ -106,7 +105,7 @@ if __name__ == '__main__':
     for (i, iterdata) in enumerate(f(noisy_evaluation, np.zeros(env.observation_space.shape[0]+1), **params)):
         print('%s Iteration %2i. Episode mean reward: %7.3f'%(args.method, i, iterdata['y_mean']))
         agent = BinaryActionLinearPolicy(iterdata['theta_mean'])
-        do_rollout(agent, env, 100, render=True)
+        do_rollout(agent, env, 100)
 
 
     env.close()
