@@ -6,7 +6,7 @@ random.seed(1)
 means = [0.1, 0.1, 0.1, 0.1, 0.9]
 n_arms = len(means)
 random.shuffle(means)
-arms = map(lambda (mu): BernoulliArm(mu), means)
+arms = map(lambda mu: BernoulliArm(mu), means)
 print("Best arm is " + str(ind_max(means)))
 
 f = open("algorithms/exp3/exp3_results.tsv", "w")

@@ -3,19 +3,18 @@
 # 1. Karpathy pg-pong.py: https://gist.github.com/karpathy/a4166c7fe253700972fcbc77e4ea32c5
 # 2. PyTorch official example: https://github.com/pytorch/examples/blob/master/reinforcement_learning/reinforce.py
 
-import os
 import argparse
-import gymnasium as gym
-import numpy as np
+import os
 from itertools import count
 
+import gymnasium as gym
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 from torch.autograd import Variable
 from torch.distributions import Categorical
-
 
 is_cuda = torch.cuda.is_available()
 
@@ -31,17 +30,16 @@ parser.add_argument('--batch_size', type=int, default=20, metavar='G',
 parser.add_argument('--seed', type=int, default=87, metavar='N',
                     help='random seed (default: 87)')
 parser.add_argument('--test', action='store_true',
-        help='whether to test the trained model or keep training')
+                    help='whether to test the trained model or keep training')
 
 args = parser.parse_args()
-
 
 # env.seed(args.seed)
 torch.manual_seed(args.seed)
 
 D = 80 * 80
 test = args.test
-if test ==True:
+if test == True:
     render = True
 else:
     render = False
@@ -51,25 +49,26 @@ if render:
 else:
     env = gym.make('Pong-v0')
 
+
 def prepro(I):
     """ prepro 210x160x3 into 6400 """
     I = I[35:195]
     I = I[::2, ::2, 0]
     I[I == 144] = 0
     I[I == 109] = 0
-    I[I != 0 ] = 1
-    return I.astype(np.float).ravel()
+    I[I != 0] = 1
+    return I.astype(float).ravel()
 
 
 class Policy(nn.Module):
     def __init__(self, num_actions=2):
         super(Policy, self).__init__()
         self.affine1 = nn.Linear(6400, 200)
-        self.affine2 = nn.Linear(200, num_actions) # action 1: static, action 2: move up, action 3: move down
+        self.affine2 = nn.Linear(200, num_actions)  # action 1: static, action 2: move up, action 3: move down
         self.num_actions = num_actions
         self.saved_log_probs = []
         self.rewards = []
-        rand_var = torch.tensor([0.5,0.5])
+        rand_var = torch.tensor([0.5, 0.5])
         if is_cuda: rand_var = rand_var.cuda()
         self.random = Categorical(rand_var)
 
@@ -77,7 +76,6 @@ class Policy(nn.Module):
         x = F.relu(self.affine1(x))
         action_scores = self.affine2(x)
         return F.softmax(action_scores, dim=1)
-
 
     def select_action(self, x):
         x = Variable(torch.from_numpy(x).float().unsqueeze(0))
@@ -89,6 +87,7 @@ class Policy(nn.Module):
         self.saved_log_probs.append(m.log_prob(action))
         return action
 
+
 # built policy network
 policy = Policy()
 if is_cuda:
@@ -98,7 +97,6 @@ if is_cuda:
 if os.path.isfile('pg_params.pkl'):
     print('Load Policy Network parametets ...')
     policy.load_state_dict(torch.load('pg_params.pkl'))
-
 
 # construct a optimal function
 optimizer = optim.RMSprop(policy.parameters(), lr=args.learning_rate, weight_decay=args.decay_rate)
@@ -149,10 +147,10 @@ for i_episode in count(1):
         if done:
             # tracking log
             running_reward = reward_sum if running_reward is None else running_reward * 0.99 + reward_sum * 0.01
-            print('REINFORCE ep %03d done. reward: %f. reward running mean: %f' % (i_episode, reward_sum, running_reward))
+            print(
+                'REINFORCE ep %03d done. reward: %f. reward running mean: %f' % (i_episode, reward_sum, running_reward))
             reward_sum = 0
             break
-
 
     # use policy gradient update model weights
     if i_episode % args.batch_size == 0:
@@ -162,6 +160,3 @@ for i_episode in count(1):
     if i_episode % 50 == 0:
         print('ep %d: model saving...' % (i_episode))
         torch.save(policy.state_dict(), 'pg_params.pkl')
-
-
-
