@@ -7,9 +7,12 @@ Bolei Zhou for IERG6130, with parts of code adapted from Moustafa Alzantot (malz
 """
 import numpy as np
 
-import gym
-from gym import wrappers
+import gymnasium as gym
+from gymnasium import wrappers
 
+
+render = True
+render_mode = 'human' if render else None
 off_policy = True # if True use off-policy q-learning update, if False, use on-policy SARSA update
 
 n_states = 40
@@ -21,19 +24,18 @@ gamma = 1.0
 t_max = 10000
 eps = 0.1
 
-def run_episode(env, policy=None, render=False):
-    obs = env.reset()
+def run_episode(env, policy=None):
+    obs, _ = env.reset(seed=0)
     total_reward = 0
     step_idx = 0
     for _ in range(t_max):
-        if render:
-            env.render()
         if policy is None:
             action = env.action_space.sample()
         else:
             a,b = obs_to_state(env, obs)
             action = policy[a][b]
-        obs, reward, done, _ = env.step(action)
+        obs, reward, terminated, truncated, _ = env.step(action)
+        done = np.logical_or(terminated, truncated)
         total_reward += gamma ** step_idx * reward
         step_idx += 1
         if done:
@@ -54,8 +56,7 @@ def obs_to_state(env, obs):
 
 if __name__ == '__main__':
     env_name = 'MountainCar-v0'
-    env = gym.make(env_name)
-    env.seed(0)
+    env = gym.make(env_name, render_mode=render_mode)
     np.random.seed(0)
     if off_policy == True:
         print ('----- using Q Learning -----')
@@ -64,7 +65,7 @@ if __name__ == '__main__':
 
     q_table = np.zeros((n_states, n_states, 3))
     for i in range(iter_max):
-        obs = env.reset()
+        obs, _ = env.reset()
         total_reward = 0
         ## eta: learning rate is decreased at each step
         eta = max(min_lr, initial_lr * (0.85 ** (i//100)))
@@ -74,7 +75,8 @@ if __name__ == '__main__':
                 action = np.random.choice(env.action_space.n)
             else:
                 action = np.argmax(q_table[a][b])
-            obs, reward, done, _ = env.step(action)
+            obs, reward, terminated, truncated, _ = env.step(action)
+            done = np.logical_or(terminated, truncated)
             total_reward += reward
             # update q table
             a_, b_ = obs_to_state(env, obs)

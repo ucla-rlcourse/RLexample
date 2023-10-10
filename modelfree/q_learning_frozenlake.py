@@ -4,12 +4,15 @@ Model-free Control for OpenAI FrozenLake env (https://gym.openai.com/envs/Frozen
 Bolei Zhou for IERG6130 course example
 
 """
-import gym,sys,numpy as np
-from gym.envs.registration import register
+import gymnasium as gym
+import sys
+import numpy as np
+from gymnasium.envs.registration import register
 
-
+render = False
+render_mode = 'human' if render else None
 no_slippery = True
-render_last = False # whether to visualize the last episode in testing
+render_last = True # whether to visualize the last episode in testing
 
 # -- hyperparameters--
 num_epis_train = 10000
@@ -22,27 +25,28 @@ if no_slippery == True:
     # the simplified frozen lake without slippery (so the transition is deterministic)
     register(
         id='FrozenLakeNotSlippery-v0',
-        entry_point='gym.envs.toy_text:FrozenLakeEnv',
+        entry_point='gymnasium.envs.toy_text:FrozenLakeEnv',
         kwargs={'map_name' : '4x4', 'is_slippery': False},
         max_episode_steps=1000,
         reward_threshold=0.78, # optimum = .8196
     )
-    env = gym.make('FrozenLakeNotSlippery-v0')
+    env = gym.make('FrozenLakeNotSlippery-v0', render_mode=render_mode)
 else:
     # the standard slippery frozen lake
-    env = gym.make('FrozenLake-v0')
+    env = gym.make('FrozenLake-v0', render_mode=render_mode)
 
 q_learning_table = np.zeros([env.observation_space.n,env.action_space.n])
 
 # -- training the agent ----
 for epis in range(num_epis_train):
-    state = env.reset()
+    state, _ = env.reset()
     for iter in range(num_iter):
         if np.random.uniform(0, 1) < eps:
             action = np.random.choice(env.action_space.n)
         else:
             action = np.argmax(q_learning_table[state,:])
-        state_new, reward, done,_ = env.step(action)
+        state_new, reward, terminated, truncated, _ = env.step(action)
+        done = np.logical_or(terminated, truncated)
         q_learning_table[state,action] = q_learning_table[state, action] + learning_rate * (reward + discount*np.max(q_learning_table[state_new,:]) - q_learning_table[state, action])
         state = state_new
         if done: break
@@ -59,12 +63,13 @@ else:
 num_episode = 500
 rewards = 0
 for epi in range(num_episode):
-    s = env.reset()
+    s, _ = env.reset()
     for _ in range(100):
         action  = np.argmax(q_learning_table[s,:])
-        state_new, reward_episode, done_episode, _ = env.step(action)
-        if epi == num_episode -1 and render_last:
-            env.render()
+        state_new, reward_episode, terminated, truncated, _ = env.step(action)
+        done_episode = np.logical_or(terminated, truncated)
+        # if epi == num_episode -1 and render_last:
+        #     env.render()
         s = state_new
         if done_episode:
             if reward_episode==1:
