@@ -11,6 +11,10 @@ conda activate conda_env
 * Install gymnasium (Dependencies installed by pip will also go to the conda env)
 ```
 pip install gymnasium[all]
+pip install gymnasium[accept-rom-license]
+
+# Try the next line if box2d-py fails to install.
+conda install swig
 ```
 * Install ai2thor if you want to run navigation_agent.py
 ```
@@ -22,6 +26,10 @@ conda install pytorch torchvision torchaudio pytorch-cuda=12.1 -c pytorch -c nvi
 ```
 ```
 pip install torch torchvision torchaudio
+```
+* Install other dependencies
+```
+pip install numpy pandas matplotlib
 ```
 
 ## Examples

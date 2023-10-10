@@ -23,7 +23,7 @@ eps = 0.1
 
 
 def run_episode(env, policy=None):
-    obs, _ = env.reset()
+    obs, _ = env.reset(seed=0)
     total_reward = 0
     step_idx = 0
     for _ in range(t_max):

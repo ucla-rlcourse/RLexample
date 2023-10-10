@@ -1,6 +1,9 @@
+import argparse
+
 import gymnasium as gym
 import numpy as np
-import argparse
+
+
 ## random agent
 class RandomAgent(object):
     def __init__(self, action_space):
@@ -9,10 +12,12 @@ class RandomAgent(object):
     def act(self, observation, reward, done):
         return self.action_space.sample()
 
+
 class BiasedAgent(object):
     def __init__(self, action_space):
         self.action_space = action_space
         self.action_always = self.action_space.sample()
+
     def act(self, observation, reward, done):
         return self.action_always
 
@@ -45,8 +50,5 @@ if __name__ == '__main__':
             observation, reward, terminated, truncated, info = env.step(action)
             done = np.logical_or(terminated, truncated)
             print('episode {}-step {}, taking action {}, observation {}'.format(i_episode, t, action, observation))
-        
+
         env.close()
-
-
-
