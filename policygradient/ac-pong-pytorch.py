@@ -46,6 +46,7 @@ else:
     env = gym.make('Pong-v0')
 torch.manual_seed(args.seed)
 
+
 def prepro(I):
     """ prepro 210x160x3 into 6400 """
     I = I[35:195]
