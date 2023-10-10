@@ -1,7 +1,7 @@
 """
 Model-free Control for OpenAI FrozenLake env (https://gym.openai.com/envs/FrozenLake-v0/)
 
-Bolei Zhou for IERG6130 course example
+Bolei Zhou, RL course example
 
 """
 import gymnasium as gym
