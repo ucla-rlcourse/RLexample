@@ -2,6 +2,7 @@
 #
 # Bolei Zhou, 22 Feb 2019
 # PENG Zhenghao, updated 23 October 2021
+# PENG Zhenghao, updated Oct 10, 2023
 import argparse
 import os
 from itertools import count
@@ -32,8 +33,6 @@ parser.add_argument('--test', action='store_true',
                     help='whether to test the trained model or keep training')
 parser.add_argument('--use_value_gradient', action='store_true',
                     help='whether to pass gradient to value network when computing policy loss. Test purpose only!')
-parser.add_argument('--disable_model_loading', action='store_true',
-                    help='whether to skip the model loading process. Test purpose only!')
 
 args = parser.parse_args()
 
@@ -109,32 +108,36 @@ optimizer = optim.RMSprop(policy.parameters(), lr=args.learning_rate, weight_dec
 
 
 def finish_episode():
-    policy_loss = []
-    value_loss = []
     discounted_return = []  # Storing the discounted return for each step, flattened for all episodes.
-    for episode_rewards in policy.rewards[::-1]:
-        step_return = 0
-        for step_reward in episode_rewards[::-1]:
-            step_return = step_reward + args.gamma * step_return
-            discounted_return.insert(0, step_return)
+    step_return = 0.0
+    # Zhenghao Note: Using a for loop over a pytorch tensor is extremely inefficient. Matrix operations are preferred.
+    for step_reward in policy.rewards[::-1]:
+        # Zhenghao Note: This is a trick here. In Pong environment, one episode might have 21 games, where each game
+        # will end while giving the agent a reward +1 or -1. We treat each game as an episode. This is proven to be
+        # an effective trick to train on Atari game.
+        if step_reward != 0.0:
+            step_return = 0.0
+        step_return = step_reward + args.gamma * step_return
+        discounted_return.insert(0, step_return)
+
     # turn rewards to pytorch tensor and standardize
     discounted_return = torch.Tensor(discounted_return)
     discounted_return = (discounted_return - discounted_return.mean()) / (discounted_return.std() + 1e-6)
+
+    log_probs = torch.concatenate([v[0] for v in policy.saved_log_probs])
+    values = torch.concatenate([v[1] for v in policy.saved_log_probs])
     if is_cuda:
         discounted_return = discounted_return.cuda()
-    for (log_prob, value), step_return in zip(policy.saved_log_probs, discounted_return):
-        advantage = step_return - value
-        if args.use_value_gradient:
-            pass
-        else:
-            advantage = advantage.detach()
-        policy_loss.append(- log_prob * advantage)  # policy gradient
-        value_loss.append(F.smooth_l1_loss(value.reshape(-1), step_return.reshape(-1)))  # value function approximation
-    policy_loss = torch.stack(policy_loss).sum()
-    value_loss = torch.stack(value_loss).sum()
+        log_probs = log_probs.cuda()
+        values = values.cuda()
+    advantage = discounted_return - values
+    if args.use_value_gradient:
+        pass
+    else:
+        advantage = advantage.detach()
+    policy_loss = (-log_probs * advantage).mean()  # policy gradient
+    value_loss = (F.smooth_l1_loss(values.reshape(-1), discounted_return.reshape(-1))).mean()  # value function approximation
     loss = policy_loss + value_loss
-    if is_cuda:
-        loss.cuda()
     optimizer.zero_grad()
     loss.backward()
     optimizer.step()
@@ -149,7 +152,6 @@ running_reward = None
 reward_sum = 0
 for i_episode in count(1):
     state, _ = env.reset(seed=args.seed + i_episode)
-    policy.rewards.append([])
     prev_x = None
     for t in range(10000):
         if render:
@@ -163,7 +165,7 @@ for i_episode in count(1):
         done = np.logical_or(terminated, truncated)
         reward_sum += rew
 
-        policy.rewards[-1].append(rew)
+        policy.rewards.append(rew)
         if done:
             # tracking log
             running_reward = reward_sum if running_reward is None else running_reward * 0.99 + reward_sum * 0.01

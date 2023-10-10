@@ -2,7 +2,7 @@
 # [Reference]
 # 1. Karpathy pg-pong.py: https://gist.github.com/karpathy/a4166c7fe253700972fcbc77e4ea32c5
 # 2. PyTorch official example: https://github.com/pytorch/examples/blob/master/reinforcement_learning/reinforce.py
-
+# Zhenghao Peng updated in Oct 10, 2023.
 import argparse
 import os
 from itertools import count
@@ -104,20 +104,27 @@ optimizer = optim.RMSprop(policy.parameters(), lr=args.learning_rate, weight_dec
 
 
 def finish_episode():
-    policy_loss = []
     discounted_return = []  # Storing the discounted return for each step, flattened for all episodes.
-    for episode_rewards in policy.rewards[::-1]:
-        step_return = 0
-        for step_reward in episode_rewards[::-1]:
-            step_return = step_reward + args.gamma * step_return
-            discounted_return.insert(0, step_return)
+    step_return = 0
+
+    # Zhenghao Note: Using a for loop over a pytorch tensor is extremely inefficient. Matrix operations are preferred.
+    for step_reward in policy.rewards[::-1]:
+        # Zhenghao Note: This is a trick here. In Pong environment, one episode might have 21 games, where each game
+        # will end while giving the agent a reward +1 or -1. We treat each game as an episode. This is proven to be
+        # an effective trick to train on Atari game.
+        if step_reward != 0.0:
+            step_return = 0.0
+        step_return = step_reward + args.gamma * step_return
+        discounted_return.insert(0, step_return)
+
     # turn rewards to pytorch tensor and standardize
     discounted_return = torch.Tensor(discounted_return)
     discounted_return = (discounted_return - discounted_return.mean()) / (discounted_return.std() + 1e-6)
-
-    for log_prob, step_return in zip(policy.saved_log_probs, discounted_return):
-        policy_loss.append(- log_prob * step_return)
-    policy_loss = torch.stack(policy_loss).sum()
+    log_probs = torch.concatenate(policy.saved_log_probs)
+    if is_cuda:
+        discounted_return = discounted_return.cuda()
+        log_probs = log_probs.cuda()
+    policy_loss = - (log_probs * discounted_return).mean()
     if is_cuda:
         policy_loss.cuda()
     optimizer.zero_grad()
@@ -134,7 +141,6 @@ running_reward = None
 reward_sum = 0
 for i_episode in count(1):
     state, _ = env.reset(seed=args.seed + i_episode)
-    policy.rewards.append([])
     prev_x = None
     for t in range(10000):
         if render:
@@ -144,11 +150,11 @@ for i_episode in count(1):
         prev_x = cur_x
         action = policy.select_action(x)
         action_env = action + 2
-        state, reward, terminated, truncated, _ = env.step(action_env)
+        state, rew, terminated, truncated, _ = env.step(action_env)
         done = np.logical_or(terminated, truncated)
-        reward_sum += reward
+        reward_sum += rew
 
-        policy.rewards[-1].append(reward)
+        policy.rewards.append(rew)
         if done:
             # tracking log
             running_reward = reward_sum if running_reward is None else running_reward * 0.99 + reward_sum * 0.01
