@@ -35,7 +35,7 @@ def cem(f, th_mean, batch_size, n_iter, elite_frac, initial_std=1.0):
 
 def do_rollout(agent, env, num_steps, render=False):
     total_rew = 0
-    ob, _ = env.reset(seed=0)
+    ob, _ = env.reset()
     for t in range(num_steps):
         a = agent.act(ob)
         (ob, reward, terminated, truncated, _info) = env.step(a)

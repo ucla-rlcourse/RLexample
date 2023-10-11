@@ -2,6 +2,7 @@
 #
 # Bolei Zhou, 22 Feb 2019
 # PENG Zhenghao, updated 23 October 2021
+# PENG Zhenghao, updated Oct 10, 2023
 import argparse
 import os
 from itertools import count
@@ -20,9 +21,7 @@ is_cuda = torch.cuda.is_available()
 parser = argparse.ArgumentParser(description='PyTorch PG with baseline example at openai-gym pong')
 parser.add_argument('--gamma', type=float, default=0.99, metavar='G',
                     help='discount factor (default: 0.99')
-parser.add_argument('--decay_rate', type=float, default=0.99, metavar='G',
-                    help='decay rate for RMSprop (default: 0.99)')
-parser.add_argument('--learning_rate', type=float, default=3e-4, metavar='G',
+parser.add_argument('--learning_rate', type=float, default=1e-4, metavar='G',
                     help='learning rate (default: 1e-4)')
 parser.add_argument('--batch_size', type=int, default=20, metavar='G',
                     help='Every how many episodes to da a param update')
@@ -32,23 +31,25 @@ parser.add_argument('--test', action='store_true',
                     help='whether to test the trained model or keep training')
 parser.add_argument('--use_value_gradient', action='store_true',
                     help='whether to pass gradient to value network when computing policy loss. Test purpose only!')
-parser.add_argument('--disable_model_loading', action='store_true',
-                    help='whether to skip the model loading process. Test purpose only!')
 
 args = parser.parse_args()
 
-env = gym.make('Pong-v0')
 torch.manual_seed(args.seed)
 
 D = 80 * 80
 test = args.test
-if test == True:
+if test:
     render = True
 else:
     render = False
 
+if render:
+    env = gym.make('Pong-v0', render_mode='human')
+else:
+    env = gym.make('Pong-v0')
 
-def prepro(I):
+
+def preprocess_image(I):
     """ prepro 210x160x3 into 6400 """
     I = I[35:195]
     I = I[::2, ::2, 0]
@@ -67,7 +68,7 @@ class PGbaseline(nn.Module):
 
         self.num_actions = num_actions
         self.saved_log_probs = []
-        self.rewards = []
+        self.rewards = []  # A nested list. Each element is a list containing the reward from one episode.
 
     def forward(self, x):
         x = F.relu(self.affine1(x))
@@ -77,7 +78,8 @@ class PGbaseline(nn.Module):
 
     def select_action(self, x):
         x = Variable(torch.from_numpy(x).float().unsqueeze(0))
-        if is_cuda: x = x.cuda()
+        if is_cuda:
+            x = x.cuda()
         probs, state_value = self.forward(x)
         m = Categorical(probs)
         action = m.sample()
@@ -92,70 +94,76 @@ if is_cuda:
     policy.cuda()
 
 # check & load pretrain model
-if os.path.isfile('pgb_params.pkl') and (not args.disable_model_loading):
-    print('Load PGbaseline Network parametets ...')
+if os.path.isfile('pgb_params.pkl'):
+    print('Load PGbaseline Network parameters ...')
     if is_cuda:
         policy.load_state_dict(torch.load('pgb_params.pkl'))
     else:
         policy.load_state_dict(torch.load('pgb_params.pkl', map_location=lambda storage, loc: storage))
 
 # construct a optimal function
-optimizer = optim.RMSprop(policy.parameters(), lr=args.learning_rate, weight_decay=args.decay_rate)
+optimizer = optim.Adam(policy.parameters(), lr=args.learning_rate)
 
 
 def finish_episode():
-    R = 0
-    policy_loss = []
-    value_loss = []
-    rewards = []
-    for r in policy.rewards[::-1]:
-        R = r + args.gamma * R
-        rewards.insert(0, R)
+    discounted_return = []  # Storing the discounted return for each step, flattened for all episodes.
+    step_return = 0.0
+    # Zhenghao Note: Using a for loop over a pytorch tensor is extremely inefficient. Matrix operations are preferred.
+    for step_reward in policy.rewards[::-1]:
+        # Zhenghao Note: This is a trick here. In Pong environment, one episode might have 21 games, where each game
+        # will end while giving the agent a reward +1 or -1. We treat each game as an episode. This is proven to be
+        # an effective trick to train on Atari game.
+        if step_reward != 0.0:
+            step_return = 0.0
+        step_return = step_reward + args.gamma * step_return
+        discounted_return.insert(0, step_return)
+
     # turn rewards to pytorch tensor and standardize
-    rewards = torch.Tensor(rewards)
-    rewards = (rewards - rewards.mean()) / (rewards.std() + 1e-6)
+    discounted_return = torch.Tensor(discounted_return)
+    discounted_return = (discounted_return - discounted_return.mean()) / (discounted_return.std() + 1e-6)
+
+    log_probs = torch.concatenate([v[0] for v in policy.saved_log_probs])
+    values = torch.concatenate([v[1] for v in policy.saved_log_probs])
     if is_cuda:
-        rewards = rewards.cuda()
-    for (log_prob, value), reward in zip(policy.saved_log_probs, rewards):
-        advantage = reward - value
-        if args.use_value_gradient:
-            pass
-        else:
-            advantage = advantage.detach()
-        policy_loss.append(- log_prob * advantage)  # policy gradient
-        value_loss.append(F.smooth_l1_loss(value, reward))  # value function approximation
-    optimizer.zero_grad()
-    policy_loss = torch.stack(policy_loss).sum()
-    value_loss = torch.stack(value_loss).sum()
+        discounted_return = discounted_return.cuda()
+        log_probs = log_probs.cuda()
+        values = values.cuda()
+    advantage = discounted_return - values
+    if args.use_value_gradient:
+        pass
+    else:
+        advantage = advantage.detach()
+    policy_loss = (-log_probs * advantage).mean()  # policy gradient
+    value_loss = (F.smooth_l1_loss(values.reshape(-1), discounted_return.reshape(-1))).mean()  # value function approximation
     loss = policy_loss + value_loss
-    if is_cuda:
-        loss.cuda()
+    optimizer.zero_grad()
     loss.backward()
     optimizer.step()
 
     # clean rewards and saved_actions
-    del policy.rewards[:]
-    del policy.saved_log_probs[:]
+    policy.rewards.clear()
+    policy.saved_log_probs.clear()
 
 
 # Main loop
 running_reward = None
 reward_sum = 0
 for i_episode in count(1):
-    state, _ = env.reset(seed=args.seed)
+    state, _ = env.reset(seed=args.seed + i_episode)
     prev_x = None
     for t in range(10000):
-        if render: env.render()
-        cur_x = prepro(state)
+        if render:
+            env.render()
+        cur_x = preprocess_image(state)
         x = cur_x - prev_x if prev_x is not None else np.zeros(D)
         prev_x = cur_x
         action = policy.select_action(x)
         action_env = action + 2
-        state, reward, terminated, truncated, _ = env.step(action_env)
+        state, rew, terminated, truncated, _ = env.step(action_env)
         done = np.logical_or(terminated, truncated)
-        reward_sum += reward
+        reward_sum += rew
 
-        policy.rewards.append(reward)
+        policy.rewards.append(rew)
         if done:
             # tracking log
             running_reward = reward_sum if running_reward is None else running_reward * 0.99 + reward_sum * 0.01
@@ -169,6 +177,6 @@ for i_episode in count(1):
         finish_episode()
 
     # Save model in every 50 episode
-    if (i_episode % 50 == 0) and (test == False) and (not args.disable_model_loading):
+    if (i_episode % 50 == 0) and (test == False):
         print('ep %d: model saving...' % (i_episode))
         torch.save(policy.state_dict(), 'pgb_params.pkl')
