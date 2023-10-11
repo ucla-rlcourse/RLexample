@@ -140,8 +140,9 @@ def finish_episode():
 # Main loop
 running_reward = None
 reward_sum = 0
+state, _ = env.reset(seed=args.seed)
 for i_episode in count(1):
-    state, _ = env.reset(seed=args.seed)
+    state, _ = env.reset()
     prev_x = None
     policy.rewards.append([])  # record rewards separately for each episode
     policy.saved_log_probs.append([])

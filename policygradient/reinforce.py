@@ -82,6 +82,7 @@ def finish_episode():
 
 def main():
     running_reward = 10
+    env.reset(seed=args.seed)
     for i_episode in count(1):
         state, _ = env.reset(seed=args.seed)
         ep_reward = 0

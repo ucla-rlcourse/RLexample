@@ -65,7 +65,7 @@ def cem(f, th_mean, batch_size, n_iter, elite_frac, initial_std=1.0):
 
 def do_rollout(agent, env, num_steps):
     total_rew = 0
-    ob, _ = env.reset(seed=0)
+    ob, _ = env.reset()
     for t in range(num_steps):
         a = agent.act(ob)
         (ob, reward, terminated, truncated, _info) = env.step(a)
@@ -90,8 +90,8 @@ if __name__ == '__main__':
 
     env = gym.make(args.env, render_mode='human')
     # env.seed(0)
+    env.reset(seed=0)
     np.random.seed(0)
-
     # Train the agent, and snapshot each stage
     if args.method == 'es':
         f = es

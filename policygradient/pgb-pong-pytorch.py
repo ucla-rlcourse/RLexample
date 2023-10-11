@@ -141,8 +141,9 @@ def finish_episode():
 # Main loop
 running_reward = None
 reward_sum = 0
+state, _ = env.reset(seed=args.seed)
 for i_episode in count(1):
-    state, _ = env.reset(seed=args.seed)
+    state, _ = env.reset()
     prev_x = None
     for t in range(10000):
         if render: env.render()

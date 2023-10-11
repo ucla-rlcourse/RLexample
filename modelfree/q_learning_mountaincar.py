@@ -25,7 +25,7 @@ t_max = 10000
 eps = 0.1
 
 def run_episode(env, policy=None):
-    obs, _ = env.reset(seed=0)
+    obs, _ = env.reset()
     total_reward = 0
     step_idx = 0
     for _ in range(t_max):
@@ -57,6 +57,7 @@ def obs_to_state(env, obs):
 if __name__ == '__main__':
     env_name = 'MountainCar-v0'
     env = gym.make(env_name, render_mode=render_mode)
+    env.reset(seed=0)
     np.random.seed(0)
     if off_policy == True:
         print ('----- using Q Learning -----')
