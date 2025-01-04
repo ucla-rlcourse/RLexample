@@ -2,6 +2,8 @@
 Solving FrozenLake environment using Value-Iteration.
 
 Updated 17 Aug 2020
+
+updated by Bolei from the feedback of ghost0832, Jan 3, 2025
 """
 import gymnasium as gym
 import numpy as np
@@ -46,11 +48,11 @@ def evaluate_policy(env, policy, gamma=1.0, n=100):
 
 def extract_policy(v, gamma=1.0):
     """ Extract the policy given a value-function """
-    policy = np.zeros(env.env.observation_space.n)
-    for s in range(env.env.observation_space.n):
+    policy = np.zeros(env.observation_space.n)
+    for s in range(env.observation_space.n):
         q_sa = np.zeros(env.action_space.n)
         for a in range(env.action_space.n):
-            for next_sr in env.env.P[s][a]:
+            for next_sr in env.P[s][a]:
                 # next_sr is a tuple of (probability, next state, reward, done)
                 p, s_, r, _ = next_sr
                 q_sa[a] += (p * (r + gamma * v[s_]))
@@ -60,14 +62,14 @@ def extract_policy(v, gamma=1.0):
 
 def value_iteration(env, gamma=1.0):
     """ Value-iteration algorithm """
-    v = np.zeros(env.env.observation_space.n)  # initialize value-function
+    v = np.zeros(env.observation_space.n)  # initialize value-function
     max_iterations = 100000
     eps = 1e-20
     for i in range(max_iterations):
         prev_v = np.copy(v)
-        for s in range(env.env.observation_space.n):
-            q_sa = [sum([p * (r + gamma * prev_v[s_]) for p, s_, r, _ in env.env.P[s][a]]) for a in
-                    range(env.env.action_space.n)]
+        for s in range(env.observation_space.n):
+            q_sa = [sum([p * (r + gamma * prev_v[s_]) for p, s_, r, _ in env.P[s][a]]) for a in
+                    range(env.action_space.n)]
             v[s] = max(q_sa)
         if (np.sum(np.fabs(prev_v - v)) <= eps):
             print('Value-iteration converged at iteration# %d.' % (i + 1))
@@ -82,6 +84,7 @@ if __name__ == '__main__':
         env = gym.make(env_name, render_mode='human')
     else:
         env = gym.make(env_name)
+    env = env.unwrapped
     gamma = 1.0
     optimal_v = value_iteration(env, gamma)
     policy = extract_policy(optimal_v, gamma)

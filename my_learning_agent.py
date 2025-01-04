@@ -4,7 +4,7 @@ import argparse
 
 import gymnasium as gym
 import numpy as np
-from gymnasium import logger
+# from gymnasium import logger
 
 from _policies import BinaryActionLinearPolicy  # Different file so it can be unpickled
 
@@ -47,7 +47,7 @@ def do_rollout(agent, env, num_steps, render=False):
 
 
 if __name__ == '__main__':
-    logger.set_level(logger.INFO)
+    # logger.set_level(logger.INFO)
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--display', action='store_true')

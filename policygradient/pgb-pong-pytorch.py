@@ -44,9 +44,9 @@ else:
     render = False
 
 if render:
-    env = gym.make('Pong-v0', render_mode='human')
+    env = gym.make("ale_py:ALE/Pong-v5" , render_mode='human')
 else:
-    env = gym.make('Pong-v0')
+    env = gym.make("ale_py:ALE/Pong-v5")
 
 
 def preprocess_image(I):

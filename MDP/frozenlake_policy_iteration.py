@@ -2,6 +2,8 @@
 Solving FrozenLake environment using Policy-Iteration.
 
 Adapted by Bolei Zhou. Originally from Moustafa Alzantot (malzantot@ucla.edu)
+
+updated from suggestions from ghost0832, Jan 3, 2025
 """
 import gymnasium as gym
 import numpy as np
@@ -29,11 +31,11 @@ def evaluate_policy(env, policy, gamma=1.0, n=100):
 
 def extract_policy(v, gamma=1.0):
     """ Extract the policy given a value-function """
-    policy = np.zeros(env.env.observation_space.n)
-    for s in range(env.env.observation_space.n):
-        q_sa = np.zeros(env.env.action_space.n)
-        for a in range(env.env.action_space.n):
-            q_sa[a] = sum([p * (r + gamma * v[s_]) for p, s_, r, _ in env.env.P[s][a]])
+    policy = np.zeros(env.observation_space.n)
+    for s in range(env.observation_space.n):
+        q_sa = np.zeros(env.action_space.n)
+        for a in range(env.action_space.n):
+            q_sa[a] = sum([p * (r + gamma * v[s_]) for p, s_, r, _ in env.P[s][a]])
         policy[s] = np.argmax(q_sa)
     return policy
 
@@ -43,13 +45,13 @@ def compute_policy_v(env, policy, gamma=1.0):
     Alternatively, we could formulate a set of linear equations in iterms of v[s] 
     and solve them to find the value function.
     """
-    v = np.zeros(env.env.observation_space.n)
+    v = np.zeros(env.observation_space.n)
     eps = 1e-10
     while True:
         prev_v = np.copy(v)
-        for s in range(env.env.observation_space.n):
+        for s in range(env.observation_space.n):
             policy_a = policy[s]
-            v[s] = sum([p * (r + gamma * prev_v[s_]) for p, s_, r, _ in env.env.P[s][policy_a]])
+            v[s] = sum([p * (r + gamma * prev_v[s_]) for p, s_, r, _ in env.P[s][policy_a]])
         if (np.sum((np.fabs(prev_v - v))) <= eps):
             # value converged
             break
@@ -58,7 +60,7 @@ def compute_policy_v(env, policy, gamma=1.0):
 
 def policy_iteration(env, gamma=1.0):
     """ Policy-Iteration algorithm """
-    policy = np.random.choice(env.env.action_space.n, size=(env.env.observation_space.n))  # initialize a random policy
+    policy = np.random.choice(env.action_space.n, size=(env.observation_space.n))  # initialize a random policy
     max_iterations = 200000
     gamma = 1.0
     for i in range(max_iterations):
@@ -78,7 +80,7 @@ if __name__ == '__main__':
         env = gym.make(env_name, render_mode='human')
     else:
         env = gym.make(env_name)
-
+    env = env.unwrapped
     optimal_policy = policy_iteration(env, gamma=1.0)
     scores = evaluate_policy(env, optimal_policy, gamma=1.0)
     print('Average scores = ', np.mean(scores))
