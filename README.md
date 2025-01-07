@@ -3,9 +3,15 @@
 ## Installing Anaconda and Gymnasium
 
 * Download and install Anaconda [here](https://www.anaconda.com/download)
+* Install the essential dev libraries on Linux or WSL (Windows Subsystem for Linux)
+```
+sudo apt-get update
+sudo apt-get install build-essential
+```
+
 * Create conda env for managing dependencies and activate the conda env
 ```
-conda create -n conda_env
+conda create -n conda_env python=3.10
 conda activate conda_env
 ```
 * Install gymnasium (Dependencies installed by pip will also go to the conda env)
