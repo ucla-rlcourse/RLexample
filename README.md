@@ -96,6 +96,11 @@ python pg-pong.py
 python navigation_agent.py
 ```
 
-* Training PPO agent to control robot dog (quadruped robot) with Genesis:
+* Training PPO agent to control car with [MetaDrive](https://github.com/metadriverse/metadrive) and [Stable-Baselines3](https://github.com/DLR-RM/stable-baselines3):
+
+https://metadrive-simulator.readthedocs.io/en/latest/training.html
+
+* Training PPO agent to control robot dog (quadruped robot) with [Genesis](https://genesis-world.readthedocs.io/en/latest/index.html) and [rsl_rl](https://github.com/leggedrobotics/rsl_rl):
 
 https://genesis-world.readthedocs.io/en/latest/user_guide/getting_started/locomotion.html
+
