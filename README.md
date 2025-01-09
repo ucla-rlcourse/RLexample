@@ -96,3 +96,6 @@ python pg-pong.py
 python navigation_agent.py
 ```
 
+* Training PPO agent to control robot dog (quadruped robot) with Genesis:
+
+https://genesis-world.readthedocs.io/en/latest/user_guide/getting_started/locomotion.html
