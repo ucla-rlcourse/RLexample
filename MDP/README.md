@@ -13,7 +13,7 @@ The [FrozenLake env](https://gym.openai.com/envs/FrozenLake-v0/) in OpenAI is a 
 
 * Run value iteration on FrozenLake
 ```
-python frozenlake_vale_iteration.py
+python frozenlake_value_iteration.py
 ```
 
 * Run policy iteration on FrozenLake

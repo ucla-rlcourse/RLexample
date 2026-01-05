@@ -17,8 +17,8 @@ conda activate conda_env
 * Install gymnasium (Dependencies installed by pip will also go to the conda env)
 ```
 pip install gymnasium[all]
-pip install gymnasium[atari]
-pip install gymnasium[accept-rom-license]
+pip install gymnasium[atari]==0.29.1
+pip install gymnasium[accept-rom-license]==0.29.1
 
 # Try the next line if box2d-py fails to install.
 conda install swig
@@ -59,6 +59,7 @@ env.close()
 
 ```
 import gymnasium as gym
+import numpy as np
 env = gym.make('CartPole-v0')
 for i_episode in range(20):
     observation = env.reset()
