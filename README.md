@@ -16,9 +16,9 @@ conda activate conda_env
 ```
 * Install gymnasium (Dependencies installed by pip will also go to the conda env)
 ```
-pip install gymnasium[all]
-pip install gymnasium[atari]==0.29.1
-pip install gymnasium[accept-rom-license]==0.29.1
+pip install "gymnasium[all]"
+pip install "gymnasium[atari]==0.29.1"
+pip install "gymnasium[accept-rom-license]==0.29.1"
 
 # Try the next line if box2d-py fails to install.
 conda install swig
@@ -55,7 +55,7 @@ for _ in range(1000):
 env.close()
 ```
 
-* Random play with ```CartPole-v0```
+* Random play with ``CartPole-v0``
 
 ```
 import gymnasium as gym
@@ -71,20 +71,20 @@ for i_episode in range(20):
 env.close()
 ```
 
-* Example code for random playing (```Pong-ram-v0```,```Acrobot-v1```,```Breakout-v0```)
+* Example code for random playing (``Pong-ram-v0``,``Acrobot-v1``,``Breakout-v0``)
 
 ```
 python my_random_agent.py Pong-ram-v0
 ```
 
-* Very naive learnable agent playing ```CartPole-v0``` or ```Acrobot-v1```
+* Very naive learnable agent playing ``CartPole-v0`` or ``Acrobot-v1``
 
 ```
 python my_learning_agent.py CartPole-v0
 
 ```
 
-* Playing Pong on CPU (with a great [blog](http://karpathy.github.io/2016/05/31/rl/)). One pretrained model is ```pong_model_bolei.p```(after training 20,000 episodes), which you can load in by replacing [save_file](https://github.com/metalbubble/RLexample/blob/master/pg-pong.py#L15) in the script. 
+* Playing Pong on CPU (with a great [blog](http://karpathy.github.io/2016/05/31/rl/)). One pretrained model is ``pong_model_bolei.p``(after training 20,000 episodes), which you can load in by replacing [save_file](https://github.com/metalbubble/RLexample/blob/master/pg-pong.py#L15) in the script.
 
 ```
 python pg-pong.py
@@ -104,4 +104,3 @@ https://metadrive-simulator.readthedocs.io/en/latest/training.html
 * Training PPO agent to control robot dog (quadruped robot) with [Genesis](https://genesis-world.readthedocs.io/en/latest/index.html) and [rsl_rl](https://github.com/leggedrobotics/rsl_rl):
 
 https://genesis-world.readthedocs.io/en/latest/user_guide/getting_started/locomotion.html
-
